@@ -1,0 +1,3 @@
+bucket: 'cct-ds-code-challenge-input-data'
+key: 'cct-ds-code-challenge-input-data'
+q1data: 'city-hex-polygons-8-10.geojson'
