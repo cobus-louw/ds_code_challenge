@@ -6,18 +6,18 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal
+from dotenv import load_dotenv
 
-from main import CPTDataLoader
-from utils import load_env_variables
+from cptcc.cptcc import CPTDataLoader
+
 logger = logging.getLogger(__name__)
 
-
+load_dotenv()
 path_to_file = pathlib.Path(__file__).parent.absolute()
 
 
 @pytest.fixture
 def data_loader():
-    load_env_variables()
     with open('config.yaml') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     return CPTDataLoader(config['bucket'])

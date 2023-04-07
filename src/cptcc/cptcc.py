@@ -12,16 +12,18 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-from utils import timeit, load_env_variables
+from cptcc.utils import timeit, load_env_variables
 
 
 class CPTDataLoader(object):
     def __init__(self, bucket):
+        logger.info(f"AWS AXESSS KEY: {os.environ['AWS_ACCESS_KEY_ID']}")
         aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
         aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
         self.s3 = boto3.client('s3',
                                aws_access_key_id=aws_access_key_id,
-                               aws_secret_access_key=aws_secret_access_key)
+                               aws_secret_access_key=aws_secret_access_key,
+                               region_name='af-south-1')
         self.bucket = bucket
 
     @timeit

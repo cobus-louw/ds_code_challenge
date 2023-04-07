@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "cptcc"
+version = "0.1.0"
+description = "City of Cape Town - Data Science Unit Code Challenge"
+authors = ["Cobus Louw"]
+license = "None"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+boto3= "^1.26.107"
+pytest = "^7.2.2"
+PyYAML = "^6.0"
+geopandas = "^0.12.2"
+osmnx = "^1.2.2"
+geopy = "^2.3.0"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
