@@ -1,10 +1,10 @@
 import boto3
-import json
 import yaml
 import os
 import logging
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import Point
 logger = logging.getLogger(__name__)
 
 from utils import timeit, load_env_variables
@@ -89,6 +89,62 @@ class CPTDataLoader(object):
         list[dict]: A list of geojson records
         '''
         return gpd.read_file(self.get_geojson(key, resolution))
+
+    @timeit
+    def get_service_requests_df(self, key='sr.csv.gz'):
+        '''
+        A function to extract service requests from s3
+
+        Parameters
+        ----------
+        key : str
+
+        Returns
+        -------
+        pd.DataFrame: A dataframe of service requests
+        '''
+        obj = self.s3.get_object(Bucket=self.bucket, Key=key)
+        return pd.read_csv(obj['Body'], compression='gzip', index_col=0)
+
+    @timeit
+    def assign_sr_to_gdf(self, gdf, sr_df):
+        '''
+        A function to assign service requests to a given geojson dataframe
+
+        Parameters
+        ----------
+        gdf : geopandas.GeoDataFrame
+        sr_df : pd.DataFrame
+
+        Returns
+        -------
+        geopandas.GeoDataFrame: A geodataframe with service requests assigned
+        '''
+
+        # create a Point geometry column in the pandas DataFrame
+        geometry = [Point(xy) for xy in zip(sr_df.longitude, sr_df.latitude)]
+        df1 = gpd.GeoDataFrame(sr_df, crs=gdf.crs, geometry=geometry)
+
+        # join the two GeoDataFrames based on whether the points fall within the polygon boundaries
+        joined = gpd.sjoin(df1, gdf, how='left', predicate='within')
+
+        joined.drop(['centroid_lat',
+        'index_right',
+        'centroid_lon',
+        'geometry'], axis=1, inplace=True)
+
+        joined.rename(columns={'index': 'h3_level8_index'}, inplace=True)
+        joined['h3_level8_index'].fillna('0', inplace=True) # fill na with 0
+        num_records_failed = joined['h3_level8_index'].value_counts()['0']
+        percent_failed = float(num_records_failed / len(joined) * 100)
+        if percent_failed > 50:
+            raise Exception(f'Failed to assign {percent_failed:.2f}% of service requests to a hexagon')
+        logger.info(f'Failed to assign {num_records_failed} records ({percent_failed:.2f}%) of service requests to a hexagon') 
+        
+        return joined.astype({'reference_number': float, 'latitude': float, 'longitude': float})
+
+
+
 
 
 def main():
