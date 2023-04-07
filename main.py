@@ -4,7 +4,12 @@ import os
 import logging
 import pandas as pd
 import geopandas as gpd
+import osmnx as ox
 from shapely.geometry import Point
+from geopy.geocoders import Nominatim
+import io
+import requests
+
 logger = logging.getLogger(__name__)
 
 from utils import timeit, load_env_variables
@@ -91,7 +96,7 @@ class CPTDataLoader(object):
         return gpd.read_file(self.get_geojson(key, resolution))
 
     @timeit
-    def get_service_requests_df(self, key='sr.csv.gz'):
+    def get_csv_gz_df(self, key):
         '''
         A function to extract service requests from s3
 
@@ -144,6 +149,27 @@ class CPTDataLoader(object):
             f'Failed to assign {num_records_failed} records ({percent_failed:.2f}%) of service requests to a hexagon')
 
         return joined.astype({'reference_number': float, 'latitude': float, 'longitude': float})
+
+    @timeit
+    def get_geoloc(self, location):
+        '''
+        use geopy to get the latitude and longitude of a given location
+        '''
+        geolocator = Nominatim(user_agent="myapp")
+        location = geolocator.geocode(location)
+        return location.latitude, location.longitude
+
+    @timeit
+    def get_geometry(self, suburb_name, city_name):
+        '''
+        use geopy to get the geometry of a given suburb
+        '''
+        return ox.geometries_from_address(suburb_name + ', ' + city_name, tags={'place': 'suburb'})
+
+    @timeit
+    def read_ods_df(self, url):
+        response = requests.get(url)
+        return pd.read_excel(io.BytesIO(response.content), skiprows=2)
 
 
 def main():
