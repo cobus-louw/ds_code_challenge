@@ -3,6 +3,8 @@ import json
 import yaml
 import os
 import logging
+import pandas as pd
+import geopandas as gpd
 logger = logging.getLogger(__name__)
 
 from utils import timeit, load_env_variables
@@ -18,7 +20,7 @@ class CPTDataLoader(object):
         self.bucket = bucket
 
     @timeit
-    def get_geojson_records(self, key, resolution=8):
+    def get_geojson(self, key, resolution=8):
         '''
         A function to extract geojson records from s3 with a given resolution
 
@@ -56,7 +58,37 @@ class CPTDataLoader(object):
                 logger.debug("Stats details bytesReturned: ")
                 logger.debug(statsDetails['BytesReturned'])
 
-        return [json.loads(record) for record in records.splitlines()]
+        return records
+
+    @timeit
+    def get_geojson_df(self, key, resolution=8):
+        '''
+        A function to extract geojson records from s3 with a given resolution
+
+        Parameters
+        ----------
+        resolution : int
+
+        Returns
+        -------
+        list[dict]: A list of geojson records
+        '''
+        return pd.read_json(self.get_geojson(key, resolution), lines=True, precise_float=True)
+
+    @timeit
+    def get_geojson_gdf(self, key, resolution=8):
+        '''
+        A function to extract geojson records from s3 with a given resolution
+
+        Parameters
+        ----------
+        resolution : int
+
+        Returns
+        -------
+        list[dict]: A list of geojson records
+        '''
+        return gpd.read_file(self.get_geojson(key, resolution))
 
 
 def main():
