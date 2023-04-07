@@ -6,6 +6,7 @@ import os
 import logging
 logger = logging.getLogger(__name__)
 
+
 def timeit(func):
     '''
     A decorator to time a function
