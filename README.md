@@ -1,3 +1,20 @@
+# cptcc
+
+City of Cape Town - Data Science Unit Code Challenge. The work of this repository is my own. 
+
+## Installation
+Create a new virtual environment and activate it. Then run the following command to install the package.
+
+```bash
+$ pip install .
+```
+
+## Usage
+
+Please run the `main.ipynb` notebook located in the root of the directory to evaluate the assignment. The notebook also installs the package and required dependencies.
+
+<hr>
+
 
 <img src="img/city_emblem.png" alt="City Logo"/>
 
