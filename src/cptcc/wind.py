@@ -19,6 +19,7 @@ class WindData():
         '''
         return pd.read_excel(url, skiprows=2)
 
+    @staticmethod
     def _filter_site(site_name, df, cols_to_keep=['date_time']):
         for col in df.columns:
             if site_name in col:

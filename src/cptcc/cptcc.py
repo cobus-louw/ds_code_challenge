@@ -159,6 +159,7 @@ class CPTDataLoader(object):
         joined['h3_level8_index'].fillna('0', inplace=True)  # fill na with 0
         num_records_failed = joined['h3_level8_index'].value_counts()['0']
         percent_failed = float(num_records_failed / len(joined) * 100)
+        
         if percent_failed > 50:
             raise Exception(
                 f'Failed to assign {percent_failed:.2f}% of service requests to a hexagon')
