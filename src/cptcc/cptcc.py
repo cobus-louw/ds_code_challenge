@@ -1,5 +1,5 @@
+from cptcc.utils import timeit
 import boto3
-import yaml
 import os
 import logging
 import pandas as pd
@@ -7,24 +7,39 @@ import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import Point
 from geopy.geocoders import Nominatim
-import io
-import requests
 
 logger = logging.getLogger(__name__)
 
-from cptcc.utils import timeit, load_env_variables
+
+def format_requests_df(df):
+    '''
+    A function to format the requests dataframe
+    '''
+
+    df['creation_timestamp'] = pd.to_datetime(
+        df['creation_timestamp'], utc=True)
+    df['completion_timestamp'] = pd.to_datetime(
+        df['completion_timestamp'], utc=True)
+    return df
 
 
 class CPTDataLoader(object):
     def __init__(self, bucket):
-        logger.info(f"AWS AXESSS KEY: {os.environ['AWS_ACCESS_KEY_ID']}")
-        aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
-        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+        aws_access_key_id, aws_secret_access_key = self._load_aws_keys()
         self.s3 = boto3.client('s3',
                                aws_access_key_id=aws_access_key_id,
                                aws_secret_access_key=aws_secret_access_key,
                                region_name='af-south-1')
         self.bucket = bucket
+
+    def _load_aws_keys(self):
+        aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID', None)
+        if aws_access_key_id is None:
+            raise Exception('AWS_ACCESS_KEY_ID not set')
+        aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY', None)
+        if aws_secret_access_key is None:
+            raise Exception('AWS_SECRET_ACCESS_KEY not set')
+        return aws_access_key_id, aws_secret_access_key
 
     @timeit
     def get_geojson(self, key, resolution=8):
@@ -111,7 +126,7 @@ class CPTDataLoader(object):
         pd.DataFrame: A dataframe of service requests
         '''
         obj = self.s3.get_object(Bucket=self.bucket, Key=key)
-        return pd.read_csv(obj['Body'], compression='gzip', index_col=0)
+        return pd.read_csv(obj['Body'], compression='gzip', index_col=0).reset_index(drop=True)
 
     @timeit
     def assign_sr_to_gdf(self, gdf, sr_df):
@@ -167,20 +182,3 @@ class CPTDataLoader(object):
         use geopy to get the geometry of a given suburb
         '''
         return ox.geometries_from_address(suburb_name + ', ' + city_name, tags={'place': 'suburb'})
-
-    @timeit
-    def read_ods_df(self, url):
-        response = requests.get(url)
-        return pd.read_excel(io.BytesIO(response.content), skiprows=2)
-
-
-def main():
-    load_env_variables()
-    with open('config.yaml') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    data_loader = CPTDataLoader(config['bucket'])
-    data_loader.get_geojson_records(config['q1data'])
-
-
-if __name__ == '__main__':
-    main()
