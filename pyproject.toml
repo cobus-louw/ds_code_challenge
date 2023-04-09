@@ -17,6 +17,7 @@ geopy = "^2.3.0"
 python-dotenv = "^1.0.0"
 odfpy = "^1.4.1"
 folium = "^0.12.1"
+jupyter = "^1.0.0" 
 
 [tool.poetry.dev-dependencies]
 
