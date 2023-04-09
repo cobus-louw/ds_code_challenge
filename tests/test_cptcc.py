@@ -40,5 +40,20 @@ def test_assign_sr_to_gdf(data_loader):
     sr_df = pd.read_csv('./data/sr.csv.gz', compression='gzip', index_col=0)
     val_df = pd.read_csv('./data/sr_hex.csv.gz', compression='gzip')
     sr_gdf = data_loader.assign_sr_to_gdf(gdf, sr_df)
-    
-    # assert_frame_equal(sr_gdf, val_df)
+    assert_frame_equal(sr_gdf.drop('h3_level8_index', axis=1),
+                       val_df.drop('h3_level8_index', axis=1))
+
+    val_hex = val_df['h3_level8_index']
+    sr_df_hex = sr_gdf['h3_level8_index']
+
+    val_hex_hash = val_hex.apply(hash)
+    sr_df_hex_hash = sr_df_hex.apply(hash)
+
+    diff = val_hex_hash - sr_df_hex_hash
+    diff = diff.apply(lambda x: 1 if x != 0 else 0)
+    num_diff = diff.sum()
+    percentage_diff = (num_diff / len(diff)) * 100
+
+    logger.info(f'Percentage of hexes that are different: {percentage_diff}')
+
+    assert percentage_diff < 0.01
