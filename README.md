@@ -1,17 +1,35 @@
-# cptcc
+# City of Cape Town - Data Science Unit Code Challenge.
+## Author: Cobus Louw
+ 
+This is my submission for the Data Science Unit Code Challenge, for which I applied for the Senior Data Engineering position at The City of Cape Town. As such, I have completed questions 1, 2, and 5. I opted to use Python for this challenge and packaged the code in a modular structure that makes it easy to reuse and test with unit tests. The work in this repository is my own.
 
-City of Cape Town - Data Science Unit Code Challenge. The work of this repository is my own. 
+To evaluate the assignment, you can install the package and its required dependencies, and then run the `main.ipynb` notebook. The notebook will also install the package for you.
 
 ## Installation
-Create a new virtual environment and activate it. Then run the following command to install the package.
 
 ```bash
-$ pip install .
+Start by creating a new virtual environmend. I used Pyenv and Python 3.8.16 for this challenge.
+
+```bash
+pyenv virtualenv 3.8.16 cptcc
+pyenv activate cptcc
+```
+  
+Then clone the repository and navigate to the root of the directory.
+  
+  ```bash
+git clone https://github.com/cobus-louw/ds_code_challenge.git
+cd ds_code_challenge
 ```
 
-## Usage
 
-Please run the `main.ipynb` notebook located in the root of the directory to evaluate the assignment. The notebook also installs the package and required dependencies.
+Then run the following command to install the package.
+
+```bash
+pip install .
+```
+
+Run the `main.ipynb` notebook located in the root of the directory to evaluate the assignment.
 
 <hr>
 
