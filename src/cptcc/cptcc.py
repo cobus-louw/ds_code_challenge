@@ -11,19 +11,11 @@ from geopy.geocoders import Nominatim
 logger = logging.getLogger(__name__)
 
 
-def format_requests_df(df):
-    '''
-    A function to format the requests dataframe
-    '''
-
-    df['creation_timestamp'] = pd.to_datetime(
-        df['creation_timestamp'], utc=True)
-    df['completion_timestamp'] = pd.to_datetime(
-        df['completion_timestamp'], utc=True)
-    return df
-
-
 class CPTDataLoader(object):
+    '''
+    A class to load and process City of Cape Town GeoJSON data from S3
+    '''
+
     def __init__(self, bucket):
         aws_access_key_id, aws_secret_access_key = self._load_aws_keys()
         self.s3 = boto3.client('s3',
@@ -44,7 +36,7 @@ class CPTDataLoader(object):
     @timeit
     def get_geojson(self, key, resolution=8):
         '''
-        A function to extract geojson records from s3 with a given resolution
+        A function to extract geojson records from s3 with a given resolution.
 
         Parameters
         ----------
@@ -52,8 +44,9 @@ class CPTDataLoader(object):
 
         Returns
         -------
-        list[dict]: A list of geojson records
+        str: A string of geojson records. This is string can be used to create a pandas dataframe or geopandas dataframe.
         '''
+
         query = f"SELECT * FROM S3Object[*].features[*] s where s.properties.resolution = {resolution}"
 
         input_serialization = {'JSON': {'Type': 'DOCUMENT'}}
@@ -93,7 +86,7 @@ class CPTDataLoader(object):
 
         Returns
         -------
-        list[dict]: A list of geojson records
+        pd.DataFrame: A dataframe of geojson records
         '''
         return pd.read_json(self.get_geojson(key, resolution), lines=True, precise_float=True)
 
@@ -108,18 +101,18 @@ class CPTDataLoader(object):
 
         Returns
         -------
-        list[dict]: A list of geojson records
+        geopandas.GeoDataFrame: A geodataframe of geojson records
         '''
         return gpd.read_file(self.get_geojson(key, resolution))
 
     @timeit
     def get_csv_gz_df(self, key):
         '''
-        A function to extract service requests from s3
+        A function to extract service requests CSV from s3
 
         Parameters
         ----------
-        key : str
+        key : str - The key of the object in S3. Should have extension .csv.gz
 
         Returns
         -------
@@ -131,7 +124,8 @@ class CPTDataLoader(object):
     @timeit
     def assign_sr_to_gdf(self, gdf, sr_df):
         '''
-        A function to assign service requests to a given geojson dataframe
+        A function to assign service requests to a given geojson dataframe.
+        The function uses the geopandas sjoin function to join the two dataframes based on whether the points fall within the polygon boundaries.
 
         Parameters
         ----------
@@ -156,11 +150,11 @@ class CPTDataLoader(object):
                      'geometry'], axis=1, inplace=True)
 
         joined.rename(columns={'index': 'h3_level8_index'}, inplace=True)
+        num_records_failed = joined['h3_level8_index'].isna().sum()
         joined['h3_level8_index'].fillna('0', inplace=True)  # fill na with 0
-        num_records_failed = joined['h3_level8_index'].value_counts()['0']
         percent_failed = float(num_records_failed / len(joined) * 100)
-        
-        if percent_failed > 50:
+
+        if percent_failed > 30:
             raise Exception(
                 f'Failed to assign {percent_failed:.2f}% of service requests to a hexagon')
         logger.info(
@@ -172,6 +166,14 @@ class CPTDataLoader(object):
     def get_geoloc(self, location):
         '''
         use geopy to get the latitude and longitude of a given location
+
+        Parameters
+        ----------
+        location : str - The location to get the latitude and longitude for. For example 'Bellville South, Cape Town'
+
+        Returns
+        -------
+        tuple: (latitude, longitude)
         '''
         geolocator = Nominatim(user_agent="myapp")
         location = geolocator.geocode(location)
@@ -180,6 +182,15 @@ class CPTDataLoader(object):
     @timeit
     def get_geometry(self, suburb_name, city_name):
         '''
-        use geopy to get the geometry of a given suburb
+        use geopy to get the geometry of a given suburb. This does not work for all suburbs.
+
+        Parameters
+        ----------
+        suburb_name : str
+        city_name : str
+
+        Returns
+        -------
+        gdf : geopandas.GeoDataFrame
         '''
         return ox.geometries_from_address(suburb_name + ', ' + city_name, tags={'place': 'suburb'})

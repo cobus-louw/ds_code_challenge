@@ -3,11 +3,18 @@ import re
 
 
 class WindData():
+    '''
+    A class to extract wind data from a given url. Assumes the data is
+    in an excel file with the wind data in the second row. The class contains
+    methods to extract the data and filter it by site name. As the data is
+    a bit messy, the class also contains methods to clean the data.
+    '''
 
     @staticmethod
     def get_df(url):
         '''
-        A function to extract wind data from a given url
+        A function to extract wind data from a given url. Assumes the data is
+        in an excel file with the wind data in the second row.
 
         Parameters
         ----------
@@ -19,20 +26,41 @@ class WindData():
         '''
         return pd.read_excel(url, skiprows=2)
 
-    @staticmethod
-    def _filter_site(site_name, df, cols_to_keep=['date_time']):
-        for col in df.columns:
-            if site_name in col:
-                cols_to_keep.append(col)
-        return df[cols_to_keep]
 
     @staticmethod
     def _remove_duplicates(my_list):
+        '''
+        A function to remove duplicates from a list. Preserves order.
+        Example: [1, 2, 3, 1, 2, 3] -> [1, 2, 3]
+
+        Parameters
+        ----------
+        my_list : list
+
+        Returns
+        -------
+        list: A list with duplicates removed
+        '''
         seen = set()
         return [x for x in my_list if not (x in seen or seen.add(x))]
 
     @staticmethod
     def _clean_column_names(column_names):
+        '''
+        A function to clean column names
+        Example
+        -------
+        ['Date & Time', 'Wind Speed (m/s)'] -> ['date_time', 'wind_speed(m/s)']
+
+        Parameters
+        ----------
+        column_names : list
+
+        Returns
+        -------
+        list: A list of cleaned column names
+        '''
+        
         cols_clean = [col.replace('&', '').replace(
             ' ', '_').lower() for col in column_names]
         cols_clean = [re.sub('_+', '_', col) for col in cols_clean]
