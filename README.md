@@ -28,7 +28,11 @@ Then run the following command to install the package:
 pip install .
 ```
 
-Run the `main.ipynb` notebook located in the root of the directory to evaluate the assignment.
+Run the `main.ipynb` notebook located in the root of the directory to evaluate the assignment:
+  
+```bash
+jupyter-notebook main.ipynb
+```
 
 <hr>
 
