@@ -7,7 +7,6 @@ To evaluate the assignment, you can install the package and its required depende
 
 ## Installation
 
-```bash
 Start by creating a new virtual environmend. I used Pyenv and Python 3.8.16 for this challenge.
 
 ```bash
