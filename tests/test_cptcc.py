@@ -3,10 +3,11 @@ import pathlib
 import logging
 import yaml
 import geopandas as gpd
-import pandas as pd
+import boto3
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal
 from dotenv import load_dotenv
+import os
 
 from cptcc.cptcc import CPTDataLoader
 
@@ -15,17 +16,25 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 path_to_file = pathlib.Path(__file__).parent.absolute()
 
+with open('config.yaml') as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+BUCKET = config['bucket']
+
 
 @pytest.fixture
 def data_loader():
-    with open('config.yaml') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    return CPTDataLoader(config['bucket'])
+    return CPTDataLoader(BUCKET)
 
 
 @pytest.fixture
 def q1_validation_data():
-    return gpd.read_file('./data/city-hex-polygons-8.geojson')
+    s3 = boto3.client('s3',
+                      aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+                      aws_secret_access_key=os.environ.get(
+                          'AWS_SECRET_ACCESS_KEY'),
+                      region_name='af-south-1')
+    obj = s3.get_object(Bucket=BUCKET, Key='city-hex-polygons-8.geojson')
+    return gpd.read_file(obj['Body'], index_col=0).reset_index(drop=True)
 
 
 def test_get_geojson_records(data_loader, q1_validation_data):
@@ -36,10 +45,12 @@ def test_get_geojson_records(data_loader, q1_validation_data):
 
 
 def test_assign_sr_to_gdf(data_loader):
-    gdf = gpd.read_file('./data/city-hex-polygons-8.geojson')
-    sr_df = pd.read_csv('./data/sr.csv.gz', compression='gzip', index_col=0)
-    val_df = pd.read_csv('./data/sr_hex.csv.gz', compression='gzip')
+    gdf = data_loader.get_geojson_gdf(
+        'city-hex-polygons-8-10.geojson', resolution=8)
+    sr_df = data_loader.get_csv_gz_df('sr.csv.gz')
+    val_df = data_loader.get_csv_gz_df('sr_hex.csv.gz')
     sr_gdf = data_loader.assign_sr_to_gdf(gdf, sr_df)
+    sr_gdf.drop(columns=['resolution', 'notification_number'], inplace=True)
     assert_frame_equal(sr_gdf.drop('h3_level8_index', axis=1),
                        val_df.drop('h3_level8_index', axis=1))
 
